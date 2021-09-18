@@ -88,12 +88,20 @@ int back_left = 2;
 int front_right = 15;
 int back_right = 13;
 
+int right_s = 5;
+int left_s = 4;
+
 void setup(){
   pinMode(front_right, OUTPUT);
   pinMode(front_left, OUTPUT);
   
   pinMode(back_right, OUTPUT);
   pinMode(back_left, OUTPUT);
+
+  SetSpeed(left_s, 0.5);
+  SetSpeed(right_s, 0.5);
+
+  delay(5000);
 
 }
 
@@ -116,7 +124,7 @@ void loop(){
 
   m_front();
 
-  delay(1000);
+  delay(6000);
 
 }
 
@@ -159,4 +167,8 @@ void m_stop(){
   digitalWrite(back_left, LOW);
   digitalWrite(back_right, LOW);  
   
+}
+
+void SetSpeed(int p, float speed) {
+  analogWrite(p, round(speed*255));
 }
