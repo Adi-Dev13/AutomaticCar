@@ -8,6 +8,7 @@ using TMPro;
 
 public class Cam : MonoBehaviour
 {
+    //Variables
     private bool camAvailable;
     private WebCamTexture backCam;
     private Texture dBg;
@@ -29,18 +30,18 @@ public class Cam : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        WebCamDevice[] devices = WebCamTexture.devices;
+        WebCamDevice[] devices = WebCamTexture.devices;  //Cameras on the device
 
-        if (devices.Length == 0) 
+        if (devices.Length == 0) // Making sure there is a camera
         {
-            Debug.Log("No Camera Detected");
+            Debug.Log("No Camera Detected");  
             camAvailable = false;
             return;
         }
 
         for (int i = 0; i < devices.Length; i++) {
-            if (!devices[i].isFrontFacing){
-                backCam = new WebCamTexture(devices[i].name, Screen.width, Screen.height);
+            if (!devices[i].isFrontFacing){  
+                backCam = new WebCamTexture(devices[i].name, Screen.width, Screen.height);  // Using the front camera
             }
         }
 
@@ -50,7 +51,7 @@ public class Cam : MonoBehaviour
         }
 
         backCam.Play();
-        print(backCam);
+        
         bg.texture = backCam;
 
         camAvailable = true;
@@ -68,6 +69,8 @@ public class Cam : MonoBehaviour
             return;        
         }
 
+        // Adding camera frame to raw image texture and 
+        // resizing raw image to the frame size
         float ratio = (float)backCam.width / (float) backCam.height;
         fit.aspectRatio = ratio;
 
@@ -77,11 +80,13 @@ public class Cam : MonoBehaviour
         int orient = -backCam.videoRotationAngle;
         bg.rectTransform.localEulerAngles = new Vector3(0, 0, orient);
 
+        // Converting the frame to a string to send to the server
         Texture2D tex = toTexture2D(bg.texture);
         byte[] bytes = tex.EncodeToPNG();
         
         string imgStr = System.Convert.ToBase64String(bytes);
 
+        // Sending the string image to the server every 0.5 seconds
         if (sendTimer <= 0) {
             StartCoroutine(Post(imgStr));
             sendTimer = _ST;
@@ -100,6 +105,7 @@ public class Cam : MonoBehaviour
         return dest;
     }
 
+    //Post request function
     IEnumerator Post(string data)
     {
         WWWForm form = new WWWForm();
@@ -121,6 +127,7 @@ public class Cam : MonoBehaviour
         }
     }
 
+    //Function that is called on button pressed to set the url/address to the inputed text
     public void StartPosting() {
         start = true;
         addr = inp.text;
