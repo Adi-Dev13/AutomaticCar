@@ -1,95 +1,26 @@
- /*
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
-
-const char* ssid = "VAAL-2021";
-const char* password = "kope@new21";
-
-//Your Domain name with URL path or IP address with path
-const char* serverName = "http://192.168.1.21:8008/check";
-
-// the following variables are unsigned longs because the time, measured in
-// milliseconds, will quickly become a bigger number than can be stored in an int.
-unsigned long lastTime = 0;
-// Timer set to 10 minutes (600000)
-//unsigned long timerDelay = 600000;
-// Set timer to 5 seconds (5000)
-unsigned long timerDelay = 500;
-int led = 15;
-
-void setup() {
-  Serial.begin(115200);
-
-  pinMode(led, OUTPUT);
-  WiFi.begin(ssid, password);
-  Serial.println("Connecting");
-  while(WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to WiFi network with IP Address: ");
-  Serial.println(WiFi.localIP());
- 
-  Serial.println("Timer set to 5 seconds (timerDelay variable), it will take 5 seconds before publishing the first reading.");
-}
-
-void loop() {
-
-  //Send an HTTP POST request every 10 minutes
-  if ((millis() - lastTime) > timerDelay) {
-    //Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED){
-      WiFiClient client;
-      HTTPClient http;
-
-      String serverPath = serverName;
-      
-      // Your Domain name with URL path or IP address with path
-      http.begin(client, serverPath.c_str());
-      
-      // Send HTTP GET request
-      int httpResponseCode = http.GET();
-      
-      if (httpResponseCode>0) {
-
-        String payload = http.getString();
-        Serial.println(payload);
-
-        if (payload == "off") {
-          digitalWrite(led, LOW);
-        } 
-        if (payload == "on"){
-          digitalWrite(led, HIGH);
-        }
-      }
-      else {
-        Serial.print("Error code: ");
-        Serial.println(httpResponseCode);
-      }
-      // Free resources
-      http.end();
-    }
-    else {
-      Serial.println("WiFi Disconnected");
-    }
-    lastTime = millis();
-  }
-}*/
-
 //order 
-// white green orange yellow
+// purple white green orange yellow grey
 //from   left to right if car is facing u
 
-int front_left = 0;
-int back_left = 2;
+#include <Servo.h>
 
-int front_right = 15;
-int back_right = 13;
+int front_left = 2;
+int back_left = 3;
 
-int right_s = 5;
-int left_s = 4;
+int front_right = 9;
+int back_right = 8;
+
+int Speed = 6;
+
+bool firstIter = true;
+
+//sonar sensor
+int trig = 4;
+int em = 5;
+
+float duration;
+
+Servo neck;
 
 void setup(){
   pinMode(front_right, OUTPUT);
@@ -98,34 +29,37 @@ void setup(){
   pinMode(back_right, OUTPUT);
   pinMode(back_left, OUTPUT);
 
-  SetSpeed(left_s, 0.5);
-  SetSpeed(right_s, 0.5);
+  pinMode(Speed, OUTPUT);
 
-  delay(5000);
+  pinMode(LED_BUILTIN, OUTPUT);
 
-}
+  SetSpeed(Speed, 0.52);
 
-void loop(){
-  m_front();
+  pinMode(trig, OUTPUT);
+  pinMode(em, INPUT);
+
+  neck.attach(11);
+  neck.write(90);
 
   delay(2000);
 
-  m_stop();
+  Serial.begin(9600);  
 
-  delay(750);
+}
 
-  m_left();
+void loop(){  
+  float distance = Distance();
+  
+  if (distance <= 20 && firstIter == false) {
+      m_stop();
+      Look();  
+        
+  } else {
 
-  delay(1500);
+    m_front();
+  }
 
-  m_stop();
-
-  delay(750);
-
-  m_front();
-
-  delay(6000);
-
+  firstIter = false;
 }
 
 void m_front(){
@@ -141,14 +75,14 @@ void m_right(){
   digitalWrite(front_right, LOW);
 
   digitalWrite(back_left, LOW);
-  digitalWrite(back_right, LOW);  
+  digitalWrite(back_right, HIGH);  
 }
 
 void m_left(){
   digitalWrite(front_left, LOW);
   digitalWrite(front_right, HIGH);
 
-  digitalWrite(back_left, LOW);
+  digitalWrite(back_left, HIGH);
   digitalWrite(back_right, LOW);  
 }
 
@@ -169,6 +103,125 @@ void m_stop(){
   
 }
 
+float Distance(){
+  
+  float _d = 0;
+  // Sets the trigPin on HIGH state for 10 micro seconds and find avg
+  
+  for (int i = 0; i<2; i++) {
+    digitalWrite(trig, LOW);
+    delayMicroseconds(2);
+  
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trig, LOW);
+  
+    duration = pulseIn(em, HIGH);
+    // Calculating the distance in cm
+    //if ((duration*0.034/2) > 450) { _d += 0; } else {
+      _d += duration*0.034/2;
+    //}
+    
+
+  }
+
+  return (_d/2);
+}
+
+void Look(){
+
+  m_stop();
+  delay(200);
+  
+  float dirs[3];
+
+  int lookDirs[] = {0, 180, 90};
+  
+  for (int i = 0; i < 3; i++){
+    neck.write(lookDirs[i]);
+    
+    delay(1500);
+
+    dirs[i] = Distance();
+    Serial.println(dirs[i]);
+    
+  }
+  
+  int dir = GetMax(dirs);
+  
+  
+  if (dir < 3) {
+    int angle = lookDirs[dir];
+    Serial.println(angle);
+    
+    if (angle > 90){
+//      while (true) {
+//        m_left();
+//        float _dist = Distance();
+//        if (_dist >= dirs[dir] - 5 && _dist<= dirs[dir] + 20) {
+//          break;
+//        }
+//      }
+
+      m_left();
+
+      delay(500);
+      
+      m_stop();
+      delay(200);
+      
+    } else if (angle < 90) {
+      
+//      while (true) {
+//        m_right();
+//        float _dist = Distance();
+//        if (_dist >= dirs[dir] - 5 && _dist<= dirs[dir] + 20) {
+//          break;
+//        }
+//      }
+
+      m_right();
+
+      delay(500);
+      
+      m_stop();
+      delay(200);
+    } 
+
+    
+  }
+  
+}
+
 void SetSpeed(int p, float speed) {
   analogWrite(p, round(speed*255));
+}
+
+
+int GetMax(float d[]) {
+  bool isLargest = false;
+  
+  for (int i = 0; i < 3; i++) {
+    isLargest = false;
+    
+    for (int j = 0; j < 3; j++) {
+      if (d[i] > d[j]){
+        isLargest = true;
+      } else {
+         if (i != j) {
+          isLargest = false;
+          break;
+         }
+      }
+    }
+
+    if (isLargest) {
+      return i;
+    }
+    
+  }
+  
+  if (!isLargest) {
+    return 3;
+  }
 }
