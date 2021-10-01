@@ -1,7 +1,3 @@
-//order 
-// purple white green orange yellow grey
-//from   left to right if car is facing u
-
 #include <Servo.h>
 
 int front_left = 2;
@@ -23,9 +19,10 @@ float duration;
 Servo neck;
 
 void setup(){
+
   pinMode(front_right, OUTPUT);
   pinMode(front_left, OUTPUT);
-  
+
   pinMode(back_right, OUTPUT);
   pinMode(back_left, OUTPUT);
 
@@ -33,7 +30,7 @@ void setup(){
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  SetSpeed(Speed, 0.52);
+  SetSpeed(Speed, 0.45);
 
   pinMode(trig, OUTPUT);
   pinMode(em, INPUT);
@@ -49,9 +46,11 @@ void setup(){
 
 void loop(){  
   float distance = Distance();
-  
-  if (distance <= 20 && firstIter == false) {
-      m_stop();
+  Serial.println(distance);
+ // m_right();
+  if (distance <= 16) {
+      m_back();
+      delay(100);
       Look();  
         
   } else {
@@ -108,7 +107,7 @@ float Distance(){
   float _d = 0;
   // Sets the trigPin on HIGH state for 10 micro seconds and find avg
   
-  for (int i = 0; i<2; i++) {
+  for (int i = 0; i<5; i++) {
     digitalWrite(trig, LOW);
     delayMicroseconds(2);
   
@@ -118,20 +117,23 @@ float Distance(){
   
     duration = pulseIn(em, HIGH);
     // Calculating the distance in cm
-    //if ((duration*0.034/2) > 450) { _d += 0; } else {
+    if ((duration*0.034/2) > 500) { _d += 0; } else {
       _d += duration*0.034/2;
-    //}
+    }
     
 
   }
 
-  return (_d/2);
+  return (_d/5);
 }
 
 void Look(){
 
+  delay(100);
   m_stop();
-  delay(200);
+  delay(100);
+
+  SetSpeed(Speed, 0.5);
   
   float dirs[3];
 
@@ -155,34 +157,20 @@ void Look(){
     Serial.println(angle);
     
     if (angle > 90){
-//      while (true) {
-//        m_left();
-//        float _dist = Distance();
-//        if (_dist >= dirs[dir] - 5 && _dist<= dirs[dir] + 20) {
-//          break;
-//        }
-//      }
+
 
       m_left();
 
-      delay(500);
+      delay(576);
       
       m_stop();
       delay(200);
       
     } else if (angle < 90) {
-      
-//      while (true) {
-//        m_right();
-//        float _dist = Distance();
-//        if (_dist >= dirs[dir] - 5 && _dist<= dirs[dir] + 20) {
-//          break;
-//        }
-//      }
 
       m_right();
 
-      delay(500);
+      delay(576);
       
       m_stop();
       delay(200);
