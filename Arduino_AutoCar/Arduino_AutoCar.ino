@@ -48,6 +48,11 @@ void loop(){
   float distance = Distance();
   Serial.println(distance);
  // m_right();
+ if (distance >= 150) {
+  m_back();
+  delay(2000);
+  m_stop();
+ }
   if (distance <= 16) {
       m_back();
       delay(100);
@@ -150,7 +155,13 @@ void Look(){
   }
   
   int dir = GetMax(dirs);
-  
+
+  if (dirs[dir] > 150) {
+    m_back();
+    delay(1000);
+    m_stop();
+    return;
+  }
   
   if (dir < 3) {
     int angle = lookDirs[dir];
