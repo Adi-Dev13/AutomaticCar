@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <EEPROM.h>
 
 int front_left = 2;
 int back_left = 3;
@@ -30,7 +31,7 @@ void setup(){
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  SetSpeed(Speed, 0.45);
+  SetSpeed(Speed, 0.5);
 
   pinMode(trig, OUTPUT);
   pinMode(em, INPUT);
@@ -42,17 +43,20 @@ void setup(){
 
   Serial.begin(9600);  
 
+  Serial.println(EEPROM.read(0));
+  Serial.println(EEPROM.read(1));
+
 }
 
 void loop(){  
   float distance = Distance();
-  Serial.println(distance);
- // m_right();
- if (distance >= 150) {
-  m_back();
-  delay(2000);
-  m_stop();
- }
+  
+   if (distance >= 150) {
+    m_back();
+    delay(2000);
+    m_stop();
+   }
+   
   if (distance <= 16) {
       m_back();
       delay(100);
@@ -137,20 +141,20 @@ void Look(){
   delay(100);
   m_stop();
   delay(100);
-
-  SetSpeed(Speed, 0.5);
   
   float dirs[3];
 
-  int lookDirs[] = {0, 180, 90};
+  int lookDirs[] = {0, 45, 135, 180, 90};
   
-  for (int i = 0; i < 3; i++){
+  Serial.print("Angles: ");
+  Serial.println(lookDirs[3]);
+  
+  for (int i = 0; i < 5; i++){
     neck.write(lookDirs[i]);
     
-    delay(1500);
+    delay(1250);
 
     dirs[i] = Distance();
-    Serial.println(dirs[i]);
     
   }
   
@@ -163,8 +167,13 @@ void Look(){
     return;
   }
   
-  if (dir < 3) {
+  if (dir < 5) {
     int angle = lookDirs[dir];
+
+    Serial.print("Dir: ");
+    Serial.println(dir);
+    
+    Serial.print("Angle: ");
     Serial.println(angle);
     
     if (angle > 90){
@@ -172,7 +181,11 @@ void Look(){
 
       m_left();
 
-      delay(576);
+    if (280 * ( dir + 1 ) > 1000) {
+      Serial.println("poopoo ka8ka888");
+    }
+
+      delay(280 * ( dir - 1 ));
       
       m_stop();
       delay(200);
@@ -181,7 +194,11 @@ void Look(){
 
       m_right();
 
-      delay(576);
+    if (280 * ( dir + 1 ) > 1000) {
+      Serial.println("poopoo ka8ka888");
+    }
+
+      delay(280 * ( dir + 1 ) );
       
       m_stop();
       delay(200);
@@ -189,6 +206,7 @@ void Look(){
 
     
   }
+
   
 }
 
@@ -200,10 +218,10 @@ void SetSpeed(int p, float speed) {
 int GetMax(float d[]) {
   bool isLargest = false;
   
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 5; i++) {
     isLargest = false;
     
-    for (int j = 0; j < 3; j++) {
+    for (int j = 0; j < 5; j++) {
       if (d[i] > d[j]){
         isLargest = true;
       } else {
