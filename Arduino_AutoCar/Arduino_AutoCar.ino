@@ -1,5 +1,4 @@
 #include <Servo.h>
-#include <EEPROM.h>
 
 int front_left = 2;
 int back_left = 3;
@@ -9,13 +8,20 @@ int back_right = 8;
 
 int Speed = 6;
 
-bool firstIter = true;
+bool frntDetected = false;
 
 //sonar sensor
 int trig = 4;
-int em = 5;
+int ech = 5;
+
+int trigS = 12;
+int echS = 10;
 
 float duration;
+float distance;
+float sDistance;
+
+unsigned long previousTime = 0;
 
 Servo neck;
 
@@ -34,7 +40,10 @@ void setup(){
   SetSpeed(Speed, 0.5);
 
   pinMode(trig, OUTPUT);
-  pinMode(em, INPUT);
+  pinMode(ech, INPUT);
+
+  pinMode(trigS, OUTPUT);
+  pinMode(echS, INPUT);
 
   neck.attach(11);
   neck.write(90);
@@ -43,31 +52,46 @@ void setup(){
 
   Serial.begin(9600);  
 
-  Serial.println(EEPROM.read(0));
-  Serial.println(EEPROM.read(1));
-
 }
 
 void loop(){  
-  float distance = Distance();
   
-   if (distance >= 150) {
-    m_back();
-    delay(2000);
-    m_stop();
-   }
-   
-  if (distance <= 16) {
-      m_back();
-      delay(100);
-      Look();  
-        
-  } else {
+   distance = Distance();
 
-    m_front();
+   Serial.println(distance);
+   
+     if (distance <= 16) {
+        m_back();
+        delay(80);
+  
+        SetSpeed(Speed, 0.65);
+        Look();  
+        SetSpeed(Speed, 0.5);
+  
+        previousTime = millis();
+
+  
+          
+    } else {
+  
+      m_front();
+    }
+
+  sDistance = DistanceS();
+
+  if ((sDistance <= 6 || (sDistance >= 55 && sDistance <= 75)) && (millis() - previousTime >= 1500) && (Distance() >= 25)){// && !frntDetected) {
+    m_back();
+    delay(100);
+    
+    m_stop();
+    LookS(sDistance);
+    
+    
+
+    previousTime == millis();
+
   }
 
-  firstIter = false;
 }
 
 void m_front(){
@@ -116,15 +140,37 @@ float Distance(){
   float _d = 0;
   // Sets the trigPin on HIGH state for 10 micro seconds and find avg
   
-  for (int i = 0; i<5; i++) {
-    digitalWrite(trig, LOW);
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+
+  duration = pulseIn(ech, HIGH);
+  // Calculating the distance in cm
+  if ((duration*0.034/2) > 500) { _d += 0; } else {
+    _d += duration*0.034/2;
+  }
+
+  return (_d);
+}
+
+
+float DistanceS(){
+  
+  float _d = 0;
+  // Sets the trigPin on HIGH state for 10 micro seconds and find avg
+  
+  for (int i = 0; i<2; i++) {
+    digitalWrite(trigS, LOW);
     delayMicroseconds(2);
   
-    digitalWrite(trig, HIGH);
+    digitalWrite(trigS, HIGH);
     delayMicroseconds(10);
-    digitalWrite(trig, LOW);
+    digitalWrite(trigS, LOW);
   
-    duration = pulseIn(em, HIGH);
+    duration = pulseIn(echS, HIGH);
     // Calculating the distance in cm
     if ((duration*0.034/2) > 500) { _d += 0; } else {
       _d += duration*0.034/2;
@@ -133,8 +179,11 @@ float Distance(){
 
   }
 
-  return (_d/5);
+  return (_d/2);
 }
+
+
+
 
 void Look(){
 
@@ -142,12 +191,10 @@ void Look(){
   m_stop();
   delay(100);
   
-  float dirs[3];
+  float dirs[5];
 
   int lookDirs[] = {0, 45, 135, 180, 90};
-  
-  Serial.print("Angles: ");
-  Serial.println(lookDirs[3]);
+
   
   for (int i = 0; i < 5; i++){
     neck.write(lookDirs[i]);
@@ -157,33 +204,20 @@ void Look(){
     dirs[i] = Distance();
     
   }
-  
+
   int dir = GetMax(dirs);
 
-  if (dirs[dir] > 150) {
-    m_back();
-    delay(1000);
-    m_stop();
-    return;
-  }
+  //Serial.println(dir);
   
   if (dir < 5) {
     int angle = lookDirs[dir];
 
-    Serial.print("Dir: ");
-    Serial.println(dir);
-    
-    Serial.print("Angle: ");
-    Serial.println(angle);
+    //Serial.println(angle);
     
     if (angle > 90){
 
 
       m_left();
-
-    if (280 * ( dir + 1 ) > 1000) {
-      Serial.println("poopoo ka8ka888");
-    }
 
       delay(280 * ( dir - 1 ));
       
@@ -193,10 +227,6 @@ void Look(){
     } else if (angle < 90) {
 
       m_right();
-
-    if (280 * ( dir + 1 ) > 1000) {
-      Serial.println("poopoo ka8ka888");
-    }
 
       delay(280 * ( dir + 1 ) );
       
@@ -210,35 +240,77 @@ void Look(){
   
 }
 
+
+void LookS( float dist ){
+
+  delay(100);
+  m_stop();
+  delay(100);
+  
+  int dir;
+
+  if (dist <= 10) {
+    dir = 1;
+  } else if ( dist >= 48 ) {
+    dir = 0;
+  }
+
+  //Serial.println(dir);
+
+    
+  if (dir == 1){
+
+
+    m_right();
+
+    delay(280);
+    
+    m_stop();
+    delay(200);
+    
+  } else if (dir == 0) {
+
+    m_left();
+
+    delay(280 );
+    
+    m_stop();
+    delay(200);
+  } 
+
+  if ( Distance() <= 15 ) {
+    Look();
+  }
+
+  m_front();
+
+  delay(500);
+
+  
+}
+
+
+
+
 void SetSpeed(int p, float speed) {
   analogWrite(p, round(speed*255));
 }
 
 
 int GetMax(float d[]) {
-  bool isLargest = false;
-  
-  for (int i = 0; i < 5; i++) {
-    isLargest = false;
-    
-    for (int j = 0; j < 5; j++) {
-      if (d[i] > d[j]){
-        isLargest = true;
-      } else {
-         if (i != j) {
-          isLargest = false;
-          break;
-         }
-      }
-    }
 
-    if (isLargest) {
-      return i;
-    }
-    
-  }
-  
-  if (!isLargest) {
-    return 3;
-  }
+
+   int maxVal = d[0];
+   int maxInd = 0;
+   
+   for (int i = 0; i < 5; i++) {
+      if (d[i] > maxVal) {
+        maxInd = i;
+        maxVal = d[i];
+      }
+
+   }
+
+   return maxInd;
+
 }
