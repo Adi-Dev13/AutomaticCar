@@ -8,4 +8,4 @@ The motors driver we choose to go with is the L298N H-bridge motor driver. We ch
 making the motors move left or right depending on the direction it needs to go to. To turn left the left motors would turn backwards and right motors front. So the car would rotate towards the left
 on the spot. This is similar to how tanks rotate.
 
-The only library used for this project is Servo.H which allows us to controll servo motors easily. Apart from that all the code in this project was written by us.
+The only library used for this project is Servo Library which allows us to controll servo motors easily. Apart from that all the code in this project was written by us.
