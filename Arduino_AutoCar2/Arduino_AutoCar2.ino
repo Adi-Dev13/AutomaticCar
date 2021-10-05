@@ -149,7 +149,7 @@ float Distance(){
   
     duration = pulseIn(ech, HIGH);
     // Calculating the distance in cm
-    if ((duration*0.034/2) > 500 || (duration*0.034/2) < 2) { _d += 0; Serial.println("wrong:");Serial.println(duration*0.034/2); } else {
+    if ((duration*0.034/2) > 500) { _d += 0; } else {
       _d += duration*0.034/2;
     }
   }
